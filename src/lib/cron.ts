@@ -43,11 +43,7 @@ export async function runDailyCron(): Promise<number> {
           none: { clickedAt: { gte: cutoff } },
         },
       },
-      orderBy: [
-        // Prefer high-priority categories first
-        { category: "asc" },
-        { createdAt: "asc" },
-      ],
+      orderBy: { createdAt: "asc" },
     });
 
     if (forgottenLinks.length === 0) continue;

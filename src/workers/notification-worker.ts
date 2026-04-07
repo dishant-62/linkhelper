@@ -25,8 +25,15 @@ const worker = createNotificationWorker(async (job) => {
       await db.notification.create({
         data: { userId, linkId: link.id },
       });
-    } catch {
-      // Ignore duplicates or constraint errors
+    } catch (err) {
+      // Log unexpected errors; constraint violations on re-send are expected
+      const message = err instanceof Error ? err.message : String(err);
+      if (!message.includes("Unique constraint")) {
+        console.error(
+          `[notification-worker] Failed to record notification for link ${link.id}:`,
+          err
+        );
+      }
     }
   }
 

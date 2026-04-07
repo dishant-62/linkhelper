@@ -99,8 +99,9 @@ export async function getRecentLinks(
 }
 
 /**
- * Returns "Today's Picks": links saved in the last 7 days that have not been
- * clicked (no Engagement row) or are in a high-priority category.
+ * Returns "Today's Picks": links that have never been clicked OR were
+ * saved in the last 7 days, filtered to high-priority categories when
+ * the user has categorised links. Unclicked links are always included.
  * Returns up to `limit` results, newest first.
  */
 export async function getTodaysPicks(
@@ -121,12 +122,11 @@ export async function getTodaysPicks(
   const links = await db.link.findMany({
     where: {
       userId,
+      // Must never have been clicked
+      engagements: { none: {} },
+      // AND (saved recently OR in a high-priority category)
       OR: [
-        // Not clicked at all
-        { engagements: { none: {} } },
-        // Saved recently
         { createdAt: { gte: sevenDaysAgo } },
-        // High-priority category
         { category: { in: highPriorityCategories } },
       ],
     },
