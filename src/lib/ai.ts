@@ -59,3 +59,55 @@ export async function suggestTags(content: string): Promise<string[]> {
     return [];
   }
 }
+
+export interface LinkAnalysis {
+  category: string;
+  tags: string[];
+  summary: string;
+}
+
+/**
+ * Single OpenAI call that categorises the page, generates 3-5 tags and writes
+ * a 2-3 sentence summary.  Falls back to safe defaults if AI is unavailable.
+ */
+export async function analyzeLink(
+  content: string,
+  url: string
+): Promise<LinkAnalysis> {
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are a helpful assistant that analyses web pages. " +
+          "Return ONLY valid JSON with exactly these keys: " +
+          '"category" (a single short category string), ' +
+          '"tags" (a JSON array of 3-5 lowercase tag strings), ' +
+          '"summary" (a 2-3 sentence plain-text summary).',
+      },
+      {
+        role: "user",
+        content:
+          `URL: ${url}\n\nPage content:\n${content.slice(0, 4000)}`,
+      },
+    ],
+    response_format: { type: "json_object" },
+    max_tokens: 300,
+  });
+
+  const raw = response.choices[0]?.message?.content ?? "{}";
+  const parsed = JSON.parse(raw) as Partial<LinkAnalysis>;
+
+  return {
+    category:
+      typeof parsed.category === "string" && parsed.category.trim()
+        ? parsed.category.trim()
+        : "General",
+    tags: Array.isArray(parsed.tags) ? parsed.tags : [],
+    summary:
+      typeof parsed.summary === "string" && parsed.summary.trim()
+        ? parsed.summary.trim()
+        : "No summary available",
+  };
+}
