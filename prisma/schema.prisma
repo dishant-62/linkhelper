@@ -20,9 +20,11 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts Account[]
-  sessions Session[]
-  links    Link[]
+  accounts      Account[]
+  sessions      Session[]
+  links         Link[]
+  engagements   Engagement[]
+  notifications Notification[]
 }
 
 model Account {
@@ -66,12 +68,51 @@ model Link {
   url         String
   title       String?
   description String?
-  summary     String?
+  thumbnail   String?
+  category    String?
   tags        String?
+  summary     String?
   userId      String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  engagements   Engagement[]
+  notifications Notification[]
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([category])
+}
+
+model Engagement {
+  id        String   @id @default(cuid())
+  userId    String
+  linkId    String
+  clickedAt DateTime @default(now())
+  timeSpent Int      @default(0)
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  link Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([linkId])
+  @@index([clickedAt])
+}
+
+model Notification {
+  id     String   @id @default(cuid())
+  userId String
+  linkId String
+  sentAt DateTime @default(now())
+  opened Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  link Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([linkId])
+  @@index([sentAt])
+  @@index([opened])
 }
 
