@@ -1,5 +1,7 @@
 import OpenAI from "openai";
 
+const MAX_AI_CONTENT_LENGTH = 4_000;
+
 const globalForOpenAI = globalThis as unknown as {
   openai: OpenAI | undefined;
 };
@@ -23,7 +25,7 @@ export async function summarizeUrl(content: string): Promise<string> {
       },
       {
         role: "user",
-        content: `Summarize this web page content:\n\n${content.slice(0, 4000)}`,
+        content: `Summarize this web page content:\n\n${content.slice(0, MAX_AI_CONTENT_LENGTH)}`,
       },
     ],
     max_tokens: 200,
@@ -89,7 +91,7 @@ export async function analyzeLink(
       {
         role: "user",
         content:
-          `URL: ${url}\n\nPage content:\n${content.slice(0, 4000)}`,
+          `URL: ${url}\n\nPage content:\n${content.slice(0, MAX_AI_CONTENT_LENGTH)}`,
       },
     ],
     response_format: { type: "json_object" },
