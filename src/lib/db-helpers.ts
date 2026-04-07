@@ -1,5 +1,22 @@
 import { db } from "@/lib/db";
 
+// ─── Tag serialisation ────────────────────────────────────────────────────────
+
+function serializeTags(tags: string[]): string {
+  return JSON.stringify(tags);
+}
+
+function deserializeTags(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    // Fallback: treat legacy comma-separated values gracefully
+    return raw.split(",").filter(Boolean);
+  }
+}
+
 // ─── User ────────────────────────────────────────────────────────────────────
 
 export async function createUser(data: {
@@ -36,8 +53,7 @@ export async function addLink(data: {
       description: data.description,
       thumbnail: data.thumbnail,
       category: data.category,
-      // tags are stored as a comma-separated string (SQLite has no array type)
-      tags: data.tags ? data.tags.join(",") : null,
+      tags: data.tags ? serializeTags(data.tags) : null,
       summary: data.summary,
     },
   });
@@ -49,17 +65,15 @@ export async function getUserLinks(userId: string) {
     orderBy: { createdAt: "desc" },
   });
 
-  // Deserialise tags back to string[]
   return links.map((link) => ({
     ...link,
-    tags: link.tags ? link.tags.split(",").filter(Boolean) : [],
+    tags: deserializeTags(link.tags),
   }));
 }
 
 /**
- * Returns links that have had no Notification opened in the last `days` days.
- * "Forgotten" means the user hasn't interacted with the link (no opened
- * notification) within the given window.
+ * Returns links that have had no opened Notification in the last `days` days.
+ * "Forgotten" means the user hasn't interacted with the link within the window.
  */
 export async function getForgottenLinks(userId: string, days: number = 30) {
   const cutoff = new Date();
@@ -83,6 +97,6 @@ export async function getForgottenLinks(userId: string, days: number = 30) {
 
   return links.map((link) => ({
     ...link,
-    tags: link.tags ? link.tags.split(",").filter(Boolean) : [],
+    tags: deserializeTags(link.tags),
   }));
 }
