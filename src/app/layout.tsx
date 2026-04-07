@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "LinkHelper",
-  description: "Save, organise, and rediscover your links with AI assistance.",
+  description: "Save, organize, and rediscover your links with AI assistance.",
 };
 
 export default function RootLayout({

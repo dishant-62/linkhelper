@@ -16,7 +16,7 @@ export default async function Home() {
         LinkHelper
       </h1>
       <p className="mt-4 max-w-xl text-lg text-muted-foreground">
-        Save, organise, and rediscover your links — powered by AI summaries and
+        Save, organize, and rediscover your links — powered by AI summaries and
         smart reminders so bookmarks never get forgotten again.
       </p>
       <div className="mt-10 flex flex-col gap-3 sm:flex-row">

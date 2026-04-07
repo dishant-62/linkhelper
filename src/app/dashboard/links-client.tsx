@@ -55,7 +55,7 @@ export default function LinksClient({ initialLinks, userName }: Props) {
     }
 
     const newLink = (await res.json()) as Link;
-    setLinks((prev) => [{ ...newLink, tags: [] }, ...prev]);
+    setLinks((prev) => [{ ...newLink, tags: newLink.tags ?? [] }, ...prev]);
     setUrl("");
     setAdding(false);
   }
