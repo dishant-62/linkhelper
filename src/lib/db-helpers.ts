@@ -35,6 +35,20 @@ export async function createUser(data: {
 
 // ─── Links ───────────────────────────────────────────────────────────────────
 
+export type LinkWithTags = {
+  id: string;
+  url: string;
+  title: string | null;
+  description: string | null;
+  thumbnail: string | null;
+  category: string | null;
+  tags: string[];
+  summary: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  userId: string;
+};
+
 export async function addLink(data: {
   userId: string;
   url: string;
@@ -69,6 +83,79 @@ export async function getUserLinks(userId: string) {
     ...link,
     tags: deserializeTags(link.tags),
   }));
+}
+
+/** Returns the N most recently saved links for a user. */
+export async function getRecentLinks(
+  userId: string,
+  limit: number = 10
+): Promise<LinkWithTags[]> {
+  const links = await db.link.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+  return links.map((link) => ({ ...link, tags: deserializeTags(link.tags) }));
+}
+
+/**
+ * Returns "Today's Picks": links that have never been clicked OR were
+ * saved in the last 7 days, filtered to high-priority categories when
+ * the user has categorised links. Unclicked links are always included.
+ * Returns up to `limit` results, newest first.
+ */
+export async function getTodaysPicks(
+  userId: string,
+  limit: number = 10
+): Promise<LinkWithTags[]> {
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const highPriorityCategories = [
+    "Technology",
+    "Science",
+    "Education",
+    "Programming",
+    "Research",
+  ];
+
+  const links = await db.link.findMany({
+    where: {
+      userId,
+      // Must never have been clicked
+      engagements: { none: {} },
+      // AND (saved recently OR in a high-priority category)
+      OR: [
+        { createdAt: { gte: sevenDaysAgo } },
+        { category: { in: highPriorityCategories } },
+      ],
+    },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+
+  return links.map((link) => ({ ...link, tags: deserializeTags(link.tags) }));
+}
+
+/**
+ * Returns all links for a user grouped by category.
+ * The result is a map of category name → links array.
+ */
+export async function getLinksByCategory(
+  userId: string
+): Promise<Record<string, LinkWithTags[]>> {
+  const links = await db.link.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const grouped: Record<string, LinkWithTags[]> = {};
+  for (const link of links) {
+    const cat = link.category ?? "Uncategorized";
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push({ ...link, tags: deserializeTags(link.tags) });
+  }
+  return grouped;
 }
 
 /**
